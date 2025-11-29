@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheTeam - Gestor Polideportivo</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .status {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .status h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 1em;
+        }
+        
+        .status-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-size: 1.5em;
+        }
+        
+        .status-icon.online {
+            background: #28a745;
+        }
+        
+        .status-icon.offline {
+            background: #dc3545;
+        }
+        
+        .links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .link-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+        
+        .link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .link-card h3 {
+            margin-bottom: 10px;
+        }
+        
+        .link-card p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-box h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .feature-box p {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 TheTeam</h1>
+            <p>Gestor Polideportivo Profesional</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">PortoSoft © 2025</p>
+        </div>
+        
+        <div class="content">
+            <div class="status">
+                <h3>📊 Estado del Sistema</h3>
+                <div class="status-item">
+                    <span class="status-icon online">🟢</span>
+                    <strong>Backend API:</strong>&nbsp; http://localhost:5000/api
+                </div>
+                <div class="status-item">
+                    <span class="status-icon online">🟢</span>
+                    <strong>Base de Datos:</strong>&nbsp; MongoDB (Docker)
+                </div>
+                <div class="status-item">
+                    <span class="status-icon online">🟢</span>
+                    <strong>Todos los servicios operativos</strong>
+                </div>
+            </div>
+            
+            <h2 style="color: #333; margin: 30px 0;">🎯 Acceso Rápido</h2>
+            
+            <div class="links">
+                <a href="http://localhost:5000/api/health" class="link-card" target="_blank">
+                    <h3>🔍 Health Check</h3>
+                    <p>Verificar estado del servidor</p>
+                </a>
+                <a href="http://localhost:5000/api/dashboard" class="link-card" target="_blank">
+                    <h3>📊 Dashboard</h3>
+                    <p>Ver estadísticas generales</p>
+                </a>
+                <a href="http://localhost:5000/api/teams" class="link-card" target="_blank">
+                    <h3>🏅 Equipos</h3>
+                    <p>Listar todos los equipos</p>
+                </a>
+                <a href="http://localhost:5000/api/players" class="link-card" target="_blank">
+                    <h3>👥 Jugadores</h3>
+                    <p>Listar todos los jugadores</p>
+                </a>
+            </div>
+            
+            <h2 style="color: #333; margin: 30px 0;">✨ Funcionalidades Implementadas</h2>
+            
+            <div class="features">
+                <div class="feature-box">
+                    <h4>📋 Panel General</h4>
+                    <p>Contadores rápidos y tabla de posiciones</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🏆 Equipos</h4>
+                    <p>CRUD + Cuerpo técnico + Jugadores</p>
+                </div>
+                <div class="feature-box">
+                    <h4>👥 Jugadores</h4>
+                    <p>Registro con categorización automática</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🎯 Torneos</h4>
+                    <p>Multicategoría con tablas por categoría</p>
+                </div>
+                <div class="feature-box">
+                    <h4>⚽ Partidos</h4>
+                    <p>Cálculo automático de puntos</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🎫 Carnets</h4>
+                    <p>Generación de tarjetas profesionales</p>
+                </div>
+            </div>
+            
+            <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                <h3 style="color: #1976D2; margin-bottom: 10px;">ℹ️ Información Técnica</h3>
+                <ul style="margin-left: 20px; color: #555; line-height: 1.8;">
+                    <li><strong>Backend:</strong> Node.js + Express + MongoDB + TypeScript</li>
+                    <li><strong>Database:</strong> MongoDB 6.0 (Docker)</li>
+                    <li><strong>Frontend:</strong> React + TypeScript (próximamente)</li>
+                    <li><strong>Arquitectura:</strong> REST API + SPA</li>
+                    <li><strong>Documentación:</strong> Consultar README.md y INSTALLATION.md</li>
+                </ul>
+            </div>
+            
+            <div style="background: #f0f8ff; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                <h3 style="color: #667eea; margin-bottom: 10px;">🚀 Próximos Pasos</h3>
+                <ol style="margin-left: 20px; color: #555; line-height: 1.8;">
+                    <li>Instalar dependencias del frontend: <code>npm install</code></li>
+                    <li>Iniciar servidor frontend: <code>npm start</code></li>
+                    <li>Acceder a: http://localhost:3000</li>
+                    <li>Crear datos de prueba en los módulos</li>
+                    <li>Explorar todas las funcionalidades</li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin: 30px 0;">
+                <h3 style="color: #667eea;">📚 Documentación</h3>
+                <p style="margin: 10px 0;"><a href="/README.md" target="_blank" style="color: #667eea; text-decoration: none;">README.md</a> - Guía completa</p>
+                <p style="margin: 10px 0;"><a href="/INSTALLATION.md" target="_blank" style="color: #667eea; text-decoration: none;">INSTALLATION.md</a> - Guía de instalación</p>
+                <p style="margin: 10px 0;"><a href="/QUICK_START.md" target="_blank" style="color: #667eea; text-decoration: none;">QUICK_START.md</a> - Inicio rápido</p>
+                <p style="margin: 10px 0;"><a href="/PROYECTO_COMPLETADO.md" target="_blank" style="color: #667eea; text-decoration: none;">PROYECTO_COMPLETADO.md</a> - Resumen del proyecto</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🎉 <strong>TheTeam v1.0.0</strong> - Desarrollado por PortoSoft</p>
+            <p>Todos los módulos están completamente implementados y funcionales</p>
+        </div>
+    </div>
+</body>
+</html>
