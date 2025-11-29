@@ -73,8 +73,8 @@ export default function Login({ auth, onLoginSuccess }: LoginProps) {
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
-              <Trophy className="w-8 h-8 text-emerald-600" />
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 overflow-hidden">
+                <img src="/logo.png" alt="TheTeam Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">TheTeam</h1>
             <p className="text-emerald-100">Gestión de deportes y equipos</p>

@@ -614,7 +614,9 @@ export default function SportManager() {
       <aside className="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col">
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-2 text-emerald-400 mb-1">
-            <Shield size={28} fill="currentColor" className="text-emerald-900 stroke-emerald-400" />
+              <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
+                <img src="/logo.png" alt="TheTeam" className="w-full h-full object-cover" />
+              </div>
             <span className="font-black text-2xl tracking-tighter italic">TheTeam</span>
           </div>
           <p className="text-[10px] text-slate-500 uppercase tracking-widest">Gestión Polideportiva</p>
