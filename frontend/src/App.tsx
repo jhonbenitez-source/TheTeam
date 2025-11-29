@@ -365,9 +365,20 @@ export default function SportManager() {
   useEffect(() => {
     // Escuchar cambios en el estado de autenticación
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      if (currentUser) setUser(currentUser);
     });
-    
+
+    // Restaurar usuario demo (si existe) cuando no haya usuario autenticado
+    try {
+      const demoRaw = localStorage.getItem('theteam_demo_current');
+      if (demoRaw) {
+        const demoUser = JSON.parse(demoRaw);
+        setUser((prev: any) => prev || demoUser);
+      }
+    } catch (err) {
+      // ignore
+    }
+
     return () => {
       unsubscribe();
     };
@@ -604,7 +615,7 @@ export default function SportManager() {
   if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
 
   if (!user) {
-    return <Login auth={auth} onLoginSuccess={() => {}} />;
+    return <Login auth={auth} onLoginSuccess={(u) => setUser(u || null)} demoMode={true} />;
   }
 
   return (
@@ -639,10 +650,14 @@ export default function SportManager() {
           <button
             onClick={async () => {
               try {
-                await signOut(auth);
-                setUser(null);
+                // Limpiar sesión demo si existe
+                try { localStorage.removeItem('theteam_demo_current'); } catch (e) {}
+                // Intentar cerrar sesión en Firebase si aplica
+                if (auth) await signOut(auth);
               } catch (error) {
                 console.error('Error al cerrar sesión:', error);
+              } finally {
+                setUser(null);
               }
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition-all"

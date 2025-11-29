@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff, Trophy } from 'lucide-react';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  Auth,
-} from 'firebase/auth';
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
+import type { Auth } from 'firebase/auth';
 
 interface LoginProps {
-  auth: Auth;
-  onLoginSuccess: () => void;
+  auth?: Auth | null;
+  onLoginSuccess: (user?: { uid: string; email?: string } | null) => void;
+  demoMode?: boolean;
 }
 
-export default function Login({ auth, onLoginSuccess }: LoginProps) {
+export default function Login({ auth, onLoginSuccess, demoMode }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,25 +23,75 @@ export default function Login({ auth, onLoginSuccess }: LoginProps) {
     setError('');
     setLoading(true);
 
+    const isDemo = demoMode || !auth || (typeof process !== 'undefined' && process.env?.REACT_APP_FIREBASE_API_KEY === 'AIzaSyDemoKey');
+
     try {
-      if (isLogin) {
-        // Iniciar sesión
-        await signInWithEmailAndPassword(auth, email, password);
+      if (isDemo) {
+        // Demo auth using localStorage
+        const key = 'theteam_demo_users';
+        const raw = localStorage.getItem(key) || '[]';
+        const users: Array<{ email: string; password: string }> = JSON.parse(raw);
+
+        if (isLogin) {
+          const u = users.find((x) => x.email.toLowerCase() === email.toLowerCase());
+          if (!u) {
+            setError('Usuario no encontrado (modo demo)');
+            setLoading(false);
+            return;
+          }
+          if (u.password !== password) {
+            setError('Contraseña incorrecta (modo demo)');
+            setLoading(false);
+            return;
+          }
+          // Successful demo login
+          localStorage.setItem('theteam_demo_current', JSON.stringify({ uid: `demo-${email}`, email }));
+          onLoginSuccess({ uid: `demo-${email}`, email });
+        } else {
+          // Register in demo
+          if (password !== confirmPassword) {
+            setError('Las contraseñas no coinciden');
+            setLoading(false);
+            return;
+          }
+          if (password.length < 6) {
+            setError('La contraseña debe tener al menos 6 caracteres');
+            setLoading(false);
+            return;
+          }
+          const exists = users.some((x) => x.email.toLowerCase() === email.toLowerCase());
+          if (exists) {
+            setError('Este correo ya está registrado (modo demo)');
+            setLoading(false);
+            return;
+          }
+          users.push({ email, password });
+          localStorage.setItem(key, JSON.stringify(users));
+          localStorage.setItem('theteam_demo_current', JSON.stringify({ uid: `demo-${email}`, email }));
+          onLoginSuccess({ uid: `demo-${email}`, email });
+        }
       } else {
-        // Registrarse
-        if (password !== confirmPassword) {
-          setError('Las contraseñas no coinciden');
-          setLoading(false);
-          return;
+        // Real Firebase auth (auth prop provided)
+        // We import dynamically to avoid bundling issues when using demo mode
+        const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
+        if (isLogin) {
+          await signInWithEmailAndPassword(auth as Auth, email, password);
+          onLoginSuccess();
+        } else {
+          if (password !== confirmPassword) {
+            setError('Las contraseñas no coinciden');
+            setLoading(false);
+            return;
+          }
+          if (password.length < 6) {
+            setError('La contraseña debe tener al menos 6 caracteres');
+            setLoading(false);
+            return;
+          }
+          await createUserWithEmailAndPassword(auth as Auth, email, password);
+          onLoginSuccess();
         }
-        if (password.length < 6) {
-          setError('La contraseña debe tener al menos 6 caracteres');
-          setLoading(false);
-          return;
-        }
-        await createUserWithEmailAndPassword(auth, email, password);
       }
-      onLoginSuccess();
     } catch (err: any) {
       const errorMessages: { [key: string]: string } = {
         'auth/email-already-in-use': 'Este correo ya está registrado',
@@ -54,7 +101,7 @@ export default function Login({ auth, onLoginSuccess }: LoginProps) {
         'auth/weak-password': 'Contraseña muy débil',
         'auth/network-request-failed': 'Error de conexión',
       };
-      setError(errorMessages[err.code] || err.message);
+      setError(errorMessages[err?.code] || err?.message || String(err));
     } finally {
       setLoading(false);
     }

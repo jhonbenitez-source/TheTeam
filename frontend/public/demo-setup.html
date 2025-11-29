@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TheTeam - Demo Setup</title>
+    <style>body{font-family:system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:2rem;background:#0f766e;color:#ecfccb}</style>
+  </head>
+  <body>
+    <h1>TheTeam — Demo Setup</h1>
+    <p id="status">Preparando demo...</p>
+
+    <script>
+      (function(){
+        try {
+          const email = 'demo_user@example.com';
+          const pass = 'password123';
+          const usersKey = 'theteam_demo_users';
+          const currentKey = 'theteam_demo_current';
+
+          const usersRaw = localStorage.getItem(usersKey) || '[]';
+          const users = JSON.parse(usersRaw);
+          // add if not exists
+          if (!users.some(u => u.email === email)) {
+            users.push({ email, password: pass });
+            localStorage.setItem(usersKey, JSON.stringify(users));
+          }
+          localStorage.setItem(currentKey, JSON.stringify({ uid: 'demo-' + email, email }));
+
+          document.getElementById('status').textContent = 'Usuario demo creado: ' + email + ' — redirigiendo a la app...';
+
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1200);
+        } catch (err) {
+          document.getElementById('status').textContent = 'Error al configurar demo: ' + err;
+        }
+      })();
+    </script>
+  </body>
+</html>
