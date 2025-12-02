@@ -4,6 +4,7 @@ export interface IPlayer extends Document {
   name: string;
   documentId: string;
   dateOfBirth: Date;
+  userId?: mongoose.Types.ObjectId | null;
   category: string; // Auto-calculated (Sub-8, Sub-10, etc.)
   age: number; // Auto-calculated
   eps: string;
@@ -17,6 +18,8 @@ export interface IPlayer extends Document {
 }
 
 const playerSchema = new Schema<IPlayer>({
+  // Owner of the record (user workspace)
+  userId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   name: { type: String, required: true },
   documentId: { type: String, required: true, unique: true },
   dateOfBirth: { type: Date, required: true },
@@ -34,5 +37,7 @@ const playerSchema = new Schema<IPlayer>({
 
 // Index para búsqueda rápida de documentId único
 playerSchema.index({ documentId: 1 }, { unique: true });
+// Index to quickly filter by user
+playerSchema.index({ userId: 1 });
 
 export default mongoose.model<IPlayer>('Player', playerSchema);

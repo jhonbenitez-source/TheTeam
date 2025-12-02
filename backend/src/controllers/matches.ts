@@ -1,21 +1,24 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import Match from '../models/Match';
 import Standing from '../models/Standing';
 import Tournament from '../models/Tournament';
 import Team from '../models/Team';
 import { sendSuccess, sendError, asyncHandler } from '../utils/helpers';
 import { calculatePoints } from '../utils/calculations';
+import type { AuthenticatedRequest } from '../middleware/auth';
 
-export const createMatch = asyncHandler(async (req: Request, res: Response) => {
+export const createMatch = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { tournamentId, category, homeTeamId, awayTeamId, scheduledDate } = req.body;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
 
   if (!tournamentId || !category || !homeTeamId || !awayTeamId || !scheduledDate) {
     return sendError(res, 'Missing required fields', 400);
   }
 
-  const tournament = await Tournament.findById(tournamentId);
+  const tournament = await Tournament.findOne({ _id: tournamentId, userId });
   if (!tournament) {
-    return sendError(res, 'Tournament not found', 404);
+    return sendError(res, 'Tournament not found or not authorized', 404);
   }
 
   const match = new Match({
@@ -26,7 +29,8 @@ export const createMatch = asyncHandler(async (req: Request, res: Response) => {
     scheduledDate: new Date(scheduledDate),
     homeScore: 0,
     awayScore: 0,
-    status: 'Programado'
+    status: 'Programado',
+    userId
   });
 
   await match.save();
@@ -35,10 +39,12 @@ export const createMatch = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, 'Match created successfully', match, 201);
 });
 
-export const getMatches = asyncHandler(async (req: Request, res: Response) => {
+export const getMatches = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { tournamentId, category, status } = req.query;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
 
-  const filter: any = {};
+  const filter: any = { userId };
   if (tournamentId) filter.tournamentId = tournamentId;
   if (category) filter.category = category;
   if (status) filter.status = status;
@@ -50,10 +56,12 @@ export const getMatches = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, 'Matches retrieved', matches);
 });
 
-export const getMatchById = asyncHandler(async (req: Request, res: Response) => {
+export const getMatchById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
 
-  const match = await Match.findById(id).populate(['homeTeamId', 'awayTeamId', 'tournamentId']);
+  const match = await Match.findOne({ _id: id, userId }).populate(['homeTeamId', 'awayTeamId', 'tournamentId']);
   if (!match) {
     return sendError(res, 'Match not found', 404);
   }
@@ -61,15 +69,17 @@ export const getMatchById = asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, 'Match retrieved', match);
 });
 
-export const updateMatchScore = asyncHandler(async (req: Request, res: Response) => {
+export const updateMatchScore = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const { homeScore, awayScore } = req.body;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
 
   if (homeScore === undefined || awayScore === undefined) {
     return sendError(res, 'Home score and away score are required', 400);
   }
 
-  const match = await Match.findById(id);
+  const match = await Match.findOne({ _id: id, userId });
   if (!match) {
     return sendError(res, 'Match not found', 404);
   }
@@ -84,10 +94,12 @@ export const updateMatchScore = asyncHandler(async (req: Request, res: Response)
   sendSuccess(res, 'Match score updated', match);
 });
 
-export const finalizeMatch = asyncHandler(async (req: Request, res: Response) => {
+export const finalizeMatch = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
 
-  const match = await Match.findById(id);
+  const match = await Match.findOne({ _id: id, userId });
   if (!match) {
     return sendError(res, 'Match not found', 404);
   }
@@ -169,8 +181,14 @@ export const finalizeMatch = asyncHandler(async (req: Request, res: Response) =>
   sendSuccess(res, 'Match finalized and standings updated', match);
 });
 
-export const getStandingsByTournamentCategory = asyncHandler(async (req: Request, res: Response) => {
+export const getStandingsByTournamentCategory = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { tournamentId, category } = req.params;
+  const userId = req.user?.id;
+  if (!userId) return sendError(res, 'No autorizado', 401);
+
+  // Ensure tournament belongs to user
+  const tournament = await Tournament.findOne({ _id: tournamentId, userId });
+  if (!tournament) return sendError(res, 'Tournament not found', 404);
 
   const standings = await Standing.find({
     tournamentId,

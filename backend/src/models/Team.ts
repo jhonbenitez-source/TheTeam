@@ -9,6 +9,7 @@ export interface ICoach extends Document {
 export interface ITeam extends Document {
   name: string;
   sport: 'Fútbol' | 'Voleibol' | 'Patinaje';
+  userId?: mongoose.Types.ObjectId | null;
   logo?: string;
   address: string;
   coaches: ICoach[];
@@ -24,6 +25,8 @@ const coachSchema = new Schema<ICoach>({
 });
 
 const teamSchema = new Schema<ITeam>({
+  // Owner of the team (user workspace)
+  userId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   name: { type: String, required: true, unique: true },
   sport: { type: String, enum: ['Fútbol', 'Voleibol', 'Patinaje'], required: true },
   logo: { type: String },
@@ -33,5 +36,8 @@ const teamSchema = new Schema<ITeam>({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+
+// Index to quickly filter by user
+teamSchema.index({ userId: 1 });
 
 export default mongoose.model<ITeam>('Team', teamSchema);

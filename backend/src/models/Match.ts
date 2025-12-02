@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMatch extends Document {
   tournamentId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId | null;
   category: string;
   homeTeamId: mongoose.Types.ObjectId;
   awayTeamId: mongoose.Types.ObjectId;
@@ -14,6 +15,8 @@ export interface IMatch extends Document {
 }
 
 const matchSchema = new Schema<IMatch>({
+  // Owner of the match (user workspace)
+  userId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
   tournamentId: { type: Schema.Types.ObjectId, ref: 'Tournament', required: true },
   category: { type: String, required: true },
   homeTeamId: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
@@ -25,5 +28,8 @@ const matchSchema = new Schema<IMatch>({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+
+// Index to quickly filter by user
+matchSchema.index({ userId: 1 });
 
 export default mongoose.model<IMatch>('Match', matchSchema);

@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyToken } from '../middleware/auth';
 import {
   createTournament,
   getTournaments,
@@ -9,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.post('/', createTournament);
-router.get('/', getTournaments);
-router.get('/:id', getTournamentById);
-router.put('/:id', updateTournament);
-router.patch('/:id/deactivate', deactivateTournament);
+router.post('/', verifyToken, createTournament);
+router.get('/', verifyToken, getTournaments);
+router.get('/:id', verifyToken, getTournamentById);
+router.put('/:id', verifyToken, updateTournament);
+router.patch('/:id/deactivate', verifyToken, deactivateTournament);
 
 export default router;

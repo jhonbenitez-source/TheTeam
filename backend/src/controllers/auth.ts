@@ -222,16 +222,14 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response, next:
  * @returns {string} - JWT token
  */
 const generateToken = (userId: string, email: string): string => {
-  const secret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+  const secret = (process.env.JWT_SECRET || 'your-secret-key-change-this-in-production') as jwt.Secret;
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const signOptions: any = { expiresIn };
 
   return jwt.sign(
-    {
-      id: userId,
-      email
-    },
-    secret,
-    { expiresIn }
+    { id: userId, email },
+    secret as any,
+    signOptions
   );
 };
 
