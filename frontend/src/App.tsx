@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Login from './components/Login';
 
+import Landing from './pages/Landing';
 // Firebase Imports
 import { initializeApp } from 'firebase/app';
 import { 
@@ -326,6 +327,7 @@ export default function SportManager() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
 
   const [showInactive, setShowInactive] = useState(false);
   
@@ -613,6 +615,10 @@ export default function SportManager() {
   if (!user) return <Login auth={auth} onLoginSuccess={() => {}} />;
 
   if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
+
+  if (showLanding && !user) {
+    return <Landing onGetStarted={() => setShowLanding(false)} />;
+  }
 
   if (!user) {
     return <Login auth={auth} onLoginSuccess={(u) => setUser(u || null)} demoMode={true} />;
