@@ -1,9 +1,24 @@
-import React from 'react';
-import { Trophy, Users, Zap, BarChart3, Calendar, Share2, ArrowRight, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Users, Zap, BarChart3, Calendar, Share2, ArrowRight, Check, ArrowUp } from 'lucide-react';
 
 export default function Landing({ onGetStarted }: { onGetStarted: () => void }) {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
       {/* HEADER */}
       <header className="sticky top-0 bg-white shadow-sm z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -290,6 +305,17 @@ export default function Landing({ onGetStarted }: { onGetStarted: () => void }) 
           </div>
         </div>
       </footer>
+
+      {/* Botón flotante Ir Arriba */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 flex items-center justify-center"
+          title="Ir al inicio"
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
     </div>
   );
 }

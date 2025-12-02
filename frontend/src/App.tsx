@@ -327,9 +327,9 @@ export default function SportManager() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLanding, setShowLanding] = useState(() => {
-    return localStorage.getItem('theteam_landing_seen') !== 'true';
-  });
+  
+  // Inicializar showLanding en true SIEMPRE (Landing es la página principal)
+  const [showLanding, setShowLanding] = useState(true);
 
   const [showInactive, setShowInactive] = useState(false);
   
@@ -382,6 +382,9 @@ export default function SportManager() {
     } catch (err) {
       // ignore
     }
+
+    // Finalizar carga después de intentar autenticación
+    setLoading(false);
 
     return () => {
       unsubscribe();
@@ -613,11 +616,6 @@ export default function SportManager() {
   const labelClass = "block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide";
   const btnPrimaryClass = "bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer";
 
-  // Si no hay usuario autenticado, mostrar Login
-  if (!user) return <Login auth={auth} onLoginSuccess={() => {}} />;
-
-  if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
-
   if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
 
   if (showLanding) {
@@ -628,7 +626,7 @@ export default function SportManager() {
   }
 
   if (!user) {
-    return <Login auth={auth} onLoginSuccess={(u) => setUser(u || null)} demoMode={true} />;
+    return <Login auth={auth} onLoginSuccess={(u) => setUser(u || null)} demoMode={true} onBackToLanding={() => setShowLanding(true)} />;
   }
 
   return (

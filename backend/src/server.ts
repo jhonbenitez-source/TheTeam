@@ -13,6 +13,7 @@ import playerRoutes from './routes/players';
 import tournamentRoutes from './routes/tournaments';
 import matchRoutes from './routes/matches';
 import cardRoutes from './routes/cards';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/players', playerRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/cards', cardRoutes);
+app.use('/api/auth', authRoutes);
 
 // Rutas health check
 app.get('/api/health', (req: Request, res: Response) => {

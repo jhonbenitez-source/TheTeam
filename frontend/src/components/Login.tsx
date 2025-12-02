@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import type { Auth } from 'firebase/auth';
 
 interface LoginProps {
   auth?: Auth | null;
   onLoginSuccess: (user?: { uid: string; email?: string } | null) => void;
   demoMode?: boolean;
+  onBackToLanding?: () => void;
 }
 
-export default function Login({ auth, onLoginSuccess, demoMode }: LoginProps) {
+export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -119,7 +120,17 @@ export default function Login({ auth, onLoginSuccess, demoMode }: LoginProps) {
       <div className="relative w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-8 text-center">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-8 text-center relative">
+            {/* Botón volver a landing */}
+            {onBackToLanding && (
+              <button
+                onClick={onBackToLanding}
+                className="absolute left-4 top-4 flex items-center gap-1 text-white hover:text-emerald-100 transition text-xs font-semibold"
+              >
+                <ArrowLeft size={16} />
+                Volver
+              </button>
+            )}
               <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 overflow-hidden">
                 <img src="/logo.png" alt="TheTeam Logo" className="w-full h-full object-cover" />
             </div>
@@ -292,13 +303,13 @@ export default function Login({ auth, onLoginSuccess, demoMode }: LoginProps) {
                 )}
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6 text-emerald-100">
-          <p className="text-sm">© 2025 TheTeam - Gestión de Equipos</p>
-          <p className="text-xs">Desarrollado por PortoSoft</p>
+            {/* Footer */}
+            <div className="text-center mt-8 pt-6 border-t border-gray-200 text-gray-500">
+              <p className="text-xs">© 2025 TheTeam - Gestión de Equipos</p>
+              <p className="text-xs">Desarrollado por PortoSoft</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
