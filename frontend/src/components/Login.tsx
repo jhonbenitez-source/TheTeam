@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import type { Auth } from 'firebase/auth';
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff, ArrowLeft, User } from 'lucide-react';
 
+// URL de la API desde el .env (o fallback por si acaso)
+// URL directa a tu Codespace (sin usar .env para asegurar que funcione)
+const API_URL = 'https://automatic-fortnight-4jpr47xp6rjrhpqv-5000.app.github.dev/api';
 interface LoginProps {
-  auth?: Auth | null;
-  onLoginSuccess: (user?: { uid: string; email?: string } | null) => void;
-  demoMode?: boolean;
+  onLoginSuccess: (user: any) => void;
   onBackToLanding?: () => void;
+  // Props antiguos ignorados para limpieza
+  auth?: any; 
+  demoMode?: boolean; 
 }
 
-export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding }: LoginProps) {
+export default function Login({ onLoginSuccess, onBackToLanding }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
+  
+  // Estado del formulario
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState(''); // ¡Nuevo campo requerido por tu backend!
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,85 +31,58 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
     setError('');
     setLoading(true);
 
-    const isDemo = demoMode || !auth || (typeof process !== 'undefined' && process.env?.REACT_APP_FIREBASE_API_KEY === 'AIzaSyDemoKey');
-
     try {
-      if (isDemo) {
-        // Demo auth using localStorage
-        const key = 'theteam_demo_users';
-        const raw = localStorage.getItem(key) || '[]';
-        const users: Array<{ email: string; password: string }> = JSON.parse(raw);
-
-        if (isLogin) {
-          const u = users.find((x) => x.email.toLowerCase() === email.toLowerCase());
-          if (!u) {
-            setError('Usuario no encontrado (modo demo)');
-            setLoading(false);
-            return;
-          }
-          if (u.password !== password) {
-            setError('Contraseña incorrecta (modo demo)');
-            setLoading(false);
-            return;
-          }
-          // Successful demo login
-          localStorage.setItem('theteam_demo_current', JSON.stringify({ uid: `demo-${email}`, email }));
-          onLoginSuccess({ uid: `demo-${email}`, email });
-        } else {
-          // Register in demo
-          if (password !== confirmPassword) {
-            setError('Las contraseñas no coinciden');
-            setLoading(false);
-            return;
-          }
-          if (password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
-            setLoading(false);
-            return;
-          }
-          const exists = users.some((x) => x.email.toLowerCase() === email.toLowerCase());
-          if (exists) {
-            setError('Este correo ya está registrado (modo demo)');
-            setLoading(false);
-            return;
-          }
-          users.push({ email, password });
-          localStorage.setItem(key, JSON.stringify(users));
-          localStorage.setItem('theteam_demo_current', JSON.stringify({ uid: `demo-${email}`, email }));
-          onLoginSuccess({ uid: `demo-${email}`, email });
-        }
-      } else {
-        // Real Firebase auth (auth prop provided)
-        // We import dynamically to avoid bundling issues when using demo mode
-        const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = await import('firebase/auth');
-        if (isLogin) {
-          await signInWithEmailAndPassword(auth as Auth, email, password);
-          onLoginSuccess();
-        } else {
-          if (password !== confirmPassword) {
-            setError('Las contraseñas no coinciden');
-            setLoading(false);
-            return;
-          }
-          if (password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
-            setLoading(false);
-            return;
-          }
-          await createUserWithEmailAndPassword(auth as Auth, email, password);
-          onLoginSuccess();
-        }
+      // 1. Validaciones básicas del frontend
+      if (password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres');
       }
+
+      if (!isLogin) {
+        if (password !== confirmPassword) throw new Error('Las contraseñas no coinciden');
+        if (!fullName.trim()) throw new Error('El nombre completo es obligatorio');
+      }
+
+      // 2. Preparar datos para el Backend
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const url = `${API_URL}${endpoint}`;
+      
+      const payload: any = { email, password };
+      if (!isLogin) {
+        payload.fullName = fullName; // Enviamos el nombre solo en registro
+      }
+
+      // 3. Petición al Backend Real
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en la solicitud');
+      }
+
+      // 4. Éxito: Guardar Token y notificar
+      if (data.token) {
+        // Guardamos el token para futuras peticiones
+        localStorage.setItem('token', data.token);
+        
+        // Guardamos datos del usuario
+        localStorage.setItem('user', JSON.stringify(data.user)); // Opcional, para mostrar nombre en UI
+        
+        // Notificamos a la App principal que ya entramos
+        onLoginSuccess(data.user);
+      } else {
+        throw new Error('El servidor no devolvió un token');
+      }
+
     } catch (err: any) {
-      const errorMessages: { [key: string]: string } = {
-        'auth/email-already-in-use': 'Este correo ya está registrado',
-        'auth/invalid-email': 'Correo inválido',
-        'auth/user-not-found': 'Usuario no encontrado',
-        'auth/wrong-password': 'Contraseña incorrecta',
-        'auth/weak-password': 'Contraseña muy débil',
-        'auth/network-request-failed': 'Error de conexión',
-      };
-      setError(errorMessages[err?.code] || err?.message || String(err));
+      console.error('Login Error:', err);
+      setError(err.message || 'Error al conectar con el servidor');
     } finally {
       setLoading(false);
     }
@@ -119,9 +99,9 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
       {/* Card de Login */}
       <div className="relative w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          
           {/* Header */}
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-8 text-center relative">
-            {/* Botón volver a landing */}
             {onBackToLanding && (
               <button
                 onClick={onBackToLanding}
@@ -131,8 +111,10 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                 Volver
               </button>
             )}
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 overflow-hidden">
-                <img src="/logo.png" alt="TheTeam Logo" className="w-full h-full object-cover" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 overflow-hidden">
+               {/* Asegúrate de que logo.png exista en public, si no, usa un icono */}
+               <img src="/logo.png" onError={(e) => e.currentTarget.style.display='none'} alt="" className="w-full h-full object-cover" />
+               <LogIn className="w-8 h-8 text-emerald-600 absolute opacity-0" style={{ opacity: 0 }} /> 
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">TheTeam</h1>
             <p className="text-emerald-100">Gestión de deportes y equipos</p>
@@ -140,47 +122,50 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
 
           {/* Contenido */}
           <div className="p-8">
-            {/* Tabs */}
+            {/* Tabs (Login vs Register) */}
             <div className="flex gap-2 mb-6">
               <button
-                onClick={() => {
-                  setIsLogin(true);
-                  setError('');
-                  setEmail('');
-                  setPassword('');
-                  setConfirmPassword('');
-                }}
+                onClick={() => { setIsLogin(true); setError(''); }}
                 className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
-                  isLogin
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  isLogin ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 <LogIn className="w-4 h-4 inline mr-2" />
-                Iniciar Sesión
+                Ingresar
               </button>
               <button
-                onClick={() => {
-                  setIsLogin(false);
-                  setError('');
-                  setEmail('');
-                  setPassword('');
-                  setConfirmPassword('');
-                }}
+                onClick={() => { setIsLogin(false); setError(''); }}
                 className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
-                  !isLogin
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  !isLogin ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 <UserPlus className="w-4 h-4 inline mr-2" />
-                Registrarse
+                Registro
               </button>
             </div>
 
             {/* Formulario */}
             <form onSubmit={handleAuth} className="space-y-4">
-              {/* Email */}
+              
+              {/* CAMPO: Nombre Completo (Solo en Registro) */}
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <User className="w-4 h-4 inline mr-2 text-emerald-600" />
+                    Nombre Completo
+                  </label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ej: Juan Pérez"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    required={!isLogin}
+                  />
+                </div>
+              )}
+
+              {/* CAMPO: Email */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Mail className="w-4 h-4 inline mr-2 text-emerald-600" />
@@ -191,12 +176,12 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   required
                 />
               </div>
 
-              {/* Contraseña */}
+              {/* CAMPO: Contraseña */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Lock className="w-4 h-4 inline mr-2 text-emerald-600" />
@@ -208,7 +193,7 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                     required
                   />
                   <button
@@ -216,16 +201,12 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              {/* Confirmar Contraseña (Solo Registro) */}
+              {/* CAMPO: Confirmar Contraseña (Solo Registro) */}
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -238,33 +219,29 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
-                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      required={!isLogin}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Error */}
+              {/* Mensaje de Error */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex gap-2">
-                  <span className="font-semibold">⚠️</span>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm flex gap-2 items-center">
+                  <span className="font-semibold text-lg">⚠️</span>
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Botón Submit */}
+              {/* Botón de Acción */}
               <button
                 type="submit"
                 disabled={loading}
@@ -273,41 +250,22 @@ export default function Login({ auth, onLoginSuccess, demoMode, onBackToLanding 
                 {loading ? (
                   <>
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                    Cargando...
+                    Procesando...
                   </>
                 ) : isLogin ? (
                   <>
-                    <LogIn className="w-5 h-5" />
-                    Iniciar Sesión
+                    <LogIn className="w-5 h-5" /> Iniciar Sesión
                   </>
                 ) : (
                   <>
-                    <UserPlus className="w-5 h-5" />
-                    Registrarse
+                    <UserPlus className="w-5 h-5" /> Crear Cuenta
                   </>
                 )}
               </button>
             </form>
 
-            {/* Info */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-600 text-center">
-                {isLogin ? (
-                  <>
-                    ¿No tienes cuenta? <span className="font-semibold cursor-pointer text-emerald-600 hover:text-emerald-700">Regístrate aquí</span>
-                  </>
-                ) : (
-                  <>
-                    ¿Ya tienes cuenta? <span className="font-semibold cursor-pointer text-emerald-600 hover:text-emerald-700">Inicia sesión aquí</span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="text-center mt-8 pt-6 border-t border-gray-200 text-gray-500">
-              <p className="text-xs">© 2025 TheTeam - Gestión de Equipos</p>
-              <p className="text-xs">Desarrollado por PortoSoft</p>
+            <div className="mt-6 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
+               © 2025 TheTeam
             </div>
           </div>
         </div>
