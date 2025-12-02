@@ -327,7 +327,9 @@ export default function SportManager() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    return localStorage.getItem('theteam_landing_seen') !== 'true';
+  });
 
   const [showInactive, setShowInactive] = useState(false);
   
@@ -616,8 +618,13 @@ export default function SportManager() {
 
   if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
 
-  if (showLanding && !user) {
-    return <Landing onGetStarted={() => setShowLanding(false)} />;
+  if (loading) return <div className="h-screen flex items-center justify-center text-emerald-600 font-bold animate-pulse">Cargando TheTeam...</div>;
+
+  if (showLanding) {
+    return <Landing onGetStarted={() => {
+      localStorage.setItem('theteam_landing_seen', 'true');
+      setShowLanding(false);
+    }} />;
   }
 
   if (!user) {
@@ -658,12 +665,15 @@ export default function SportManager() {
               try {
                 // Limpiar sesión demo si existe
                 try { localStorage.removeItem('theteam_demo_current'); } catch (e) {}
+                // Resetear landing para que aparezca nuevamente al volver a ingresar
+                try { localStorage.removeItem('theteam_landing_seen'); } catch (e) {}
                 // Intentar cerrar sesión en Firebase si aplica
                 if (auth) await signOut(auth);
               } catch (error) {
                 console.error('Error al cerrar sesión:', error);
               } finally {
                 setUser(null);
+                setShowLanding(true);
               }
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm font-semibold transition-all"
